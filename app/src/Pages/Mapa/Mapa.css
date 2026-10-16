@@ -91,15 +91,20 @@
   box-shadow: 0 4px 16px #0003;
   font-size: 13px;
 }
-.truck-route-panel label { display: block; margin-bottom: 6px; font-weight: 700; }
-.truck-route-panel select { width: 100%; padding: 8px; border: 1px solid #687185; border-radius: 6px; background: #fff; color: #1c2541; }
+.truck-route-panel h2 { margin: 0 0 2px; font-size: 14px; font-weight: 700; }
+.truck-route-panel .route-subtitle { margin: 0 0 4px; color: #4a5468; }
 .truck-route-panel button { margin-top: 8px; padding: 7px 10px; border: 1px solid #1c2541; border-radius: 6px; background: #1c2541; color: #fff; cursor: pointer; }
 .truck-route-panel p { margin: 8px 0; }
-.truck-route-panel summary { padding: 6px 0; cursor: pointer; font-weight: 600; }
-.truck-route-panel ol { padding-left: 24px; margin: 8px 0; }
+.truck-route-panel ol { padding-left: 24px; margin: 10px 0 0; }
 .truck-route-panel li { margin: 7px 0; }
-.truck-route-panel :is(select, button, summary):focus-visible { outline: 3px solid #187185; outline-offset: 2px; }
-.route-note { font-size: 12px; line-height: 1.45; }
+.truck-route-panel .route-point-off { color: #687185; }
+/* Rua por onde o caminhão está passando agora (mesma cor da linha destacada no mapa) */
+.truck-route-panel .route-point-active { color: #14532d; font-weight: 700; }
+/* Última parada: o endereço do usuário, com o ícone de casa no lugar do número */
+.truck-route-panel .route-point-home { display: flex; align-items: center; gap: 6px; margin-left: -22px; list-style: none; }
+.truck-route-panel .route-home-icon { flex: none; width: 16px; height: 16px; color: #14532d; }
+.route-point-home-icon svg { width: 16px; height: 16px; }
+.truck-route-panel button:focus-visible { outline: 3px solid #187185; outline-offset: 2px; }
 .route-error { color: #8e2020; }
 @media (max-width: 600px) {
   .truck-route-panel { padding: 10px; max-height: 48%; font-size: 12px; }
@@ -128,6 +133,20 @@
   object-fit: contain;
   filter: drop-shadow(0 0 1px #fff) drop-shadow(0 2px 3px rgba(0, 0, 0, .35));
 }
+
+/* Nome da rua por onde o caminhão está passando */
+.leaflet-tooltip.truck-street-label {
+  padding: 3px 8px;
+  border: 2px solid #14532d;
+  border-radius: 6px;
+  background: #fff;
+  color: #14532d;
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+}
+.leaflet-tooltip-top.truck-street-label::before { border-top-color: #14532d; }
 
 .aviso {
   position: absolute;

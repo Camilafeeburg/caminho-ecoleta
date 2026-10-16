@@ -5,11 +5,10 @@ import ColSeletiva from './ColSeletiva'
 import Configuracoes from './Configuracoes'
 import './Mapa.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { GeoJSON, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { GeoJSON, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import caminhaoUrl from '../../assets/caminhao.png'
 import folhasUrl from '../../assets/folhas.svg'
-import { ROUTE_CACHE_MAX_AGE_MS, readCachedRoute, saveCachedRoute } from './routeCache'
 
 const TRUCK_ICON = L.divIcon({
   html: `<img class="truck-marker" src="${caminhaoUrl}" alt="" />`,
@@ -18,11 +17,51 @@ const TRUCK_ICON = L.divIcon({
   iconAnchor: [20, 30],
 })
 
-const ROUTE_STYLE = { color: '#1a1a1a', weight: 3, opacity: 0.9, dashArray: '6 8', lineCap: 'round' }
+const ROUTE_STYLE = { color: '#1a1a1a', weight: 4, opacity: 0.9, dashArray: '6 8', lineCap: 'round' }
+// Rua por onde o caminhão está passando agora.
+const CURRENT_STREET_STYLE = { color: '#14532d', weight: 9, opacity: 0.95, lineCap: 'round', lineJoin: 'round', interactive: false }
 const FOLLOW_TRUCK_ZOOM = 17
+// Tempo que o caminhão fica parado na casa do usuário antes de recomeçar o trajeto.
+const ARRIVAL_PAUSE_MS = 5000
+
+// Última parada do trajeto: o endereço do usuário logado.
+const HOME_STOP = 'casa'
+const HOME_PATH = 'M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-5.5h3V20h5V9.5'
+// Mesmo estilo dos pontos numerados, com a casa no lugar do número.
+const HOME_ICON = L.divIcon({
+  html: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="${HOME_PATH}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  className: 'route-point-icon route-point-home-icon',
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+})
+
+function HomeIcon() {
+  return (
+    <svg className='route-home-icon' viewBox='0 0 24 24' aria-hidden='true' focusable='false'>
+      <path d={HOME_PATH} fill='none' stroke='currentColor' strokeWidth='2.2' strokeLinecap='round' strokeLinejoin='round' />
+    </svg>
+  )
+}
 
 function pointIcon(order) {
   return L.divIcon({ html: `<span>${order}</span>`, className: 'route-point-icon', iconSize: [28, 28], iconAnchor: [14, 14] })
+}
+
+// Trechos da rota por rua, a partir das instruções do openrouteservice. Passos seguidos na mesma rua
+// viram um trecho só; `from`/`to` são índices nas coordenadas da geometria.
+function streetRuns(route) {
+  const runs = []
+  for (const segment of route?.features?.[0]?.properties?.segments || []) {
+    for (const step of segment.steps || []) {
+      const [from, to] = step.way_points || []
+      if (!Number.isInteger(from) || !Number.isInteger(to) || to <= from) continue
+      const name = step.name && step.name !== '-' ? step.name : ''
+      const last = runs.at(-1)
+      if (last && last.name === name && last.to === from) last.to = to
+      else runs.push({ name, from, to })
+    }
+  }
+  return runs
 }
 
 function fitRoute(map, route) {
@@ -148,14 +187,13 @@ function MapControls({ route, truckPositionRef, following, onFollowingChange }) 
   )
 }
 
-function TruckMarker({ route, speed, startedAt, positionRef }) {
+// Caminhão animado do primeiro ponto da rota até o fim do trajeto (a casa do usuário). Lá ele espera
+// ARRIVAL_PAUSE_MS e recomeça do primeiro ponto, em loop.
+function TruckMarker({ route, latlngs, streets, streetName, arrived, onStreetChange, onArrivedChange, speed, startedAt, positionRef }) {
   const [position, setPosition] = useState(null)
   const frameRef = useRef()
-
-  const latlngs = useMemo(() => {
-    const coordinates = route?.features?.[0]?.geometry?.coordinates || []
-    return coordinates.map(([lng, lat]) => L.latLng(lat, lng))
-  }, [route])
+  const streetIndexRef = useRef(-1)
+  const arrivedRef = useRef(false)
 
   const distanceKm = route?.features?.[0]?.properties?.summary?.distance || 0
   const baseDurationMs = Math.max(8_000, distanceKm * 3000)
@@ -177,7 +215,10 @@ function TruckMarker({ route, speed, startedAt, positionRef }) {
       return undefined
     }
     function step() {
-      const progress = (Math.max(0, Date.now() - startedAt) * speed / baseDurationMs) % 1
+      // Cada volta: percurso até a casa e a pausa lá.
+      const travelMs = baseDurationMs / speed
+      const elapsed = Math.max(0, Date.now() - startedAt) % (travelMs + ARRIVAL_PAUSE_MS)
+      const progress = Math.min(1, elapsed / travelMs)
       const targetDistance = progress * totalDistance
 
       let index = cumulative.findIndex((value) => value >= targetDistance)
@@ -196,15 +237,35 @@ function TruckMarker({ route, speed, startedAt, positionRef }) {
       positionRef.current = current
       setPosition(current)
 
+      // Avisa só quando o caminhão entra em outra rua.
+      const streetIndex = streets.findIndex((street) => index - 1 >= street.from && index - 1 < street.to)
+      if (streetIndex !== streetIndexRef.current) {
+        streetIndexRef.current = streetIndex
+        onStreetChange(streetIndex)
+      }
+
+      // Avisa quando chega à casa do usuário e quando sai de novo do primeiro ponto.
+      const atHome = progress >= 1
+      if (atHome !== arrivedRef.current) {
+        arrivedRef.current = atHome
+        onArrivedChange(atHome)
+      }
+
       frameRef.current = requestAnimationFrame(step)
     }
 
     frameRef.current = requestAnimationFrame(step)
     return () => cancelAnimationFrame(frameRef.current)
-  }, [latlngs, baseDurationMs, speed, startedAt, positionRef])
+  }, [latlngs, streets, onStreetChange, onArrivedChange, baseDurationMs, speed, startedAt, positionRef])
 
   if (!position) return null
-  return <Marker position={position} icon={TRUCK_ICON} interactive={false} />
+  const label = arrived ? 'Chegou ao seu endereço' : streetName
+  return (
+    // Acima do marcador da casa quando para sobre ele.
+    <Marker position={position} icon={TRUCK_ICON} interactive={false} zIndexOffset={1000}>
+      {label && <Tooltip permanent direction='top' offset={[0, -30]} className='truck-street-label'>{label}</Tooltip>}
+    </Marker>
+  )
 }
 
 function formatDuration(seconds = 0) {
@@ -226,88 +287,76 @@ function Chevron({ direction }) {
   )
 }
 
-function Mapa({ usuarioId, onSair, onSessaoExpirada }) {
+function Mapa({ onSair, onSessaoExpirada }) {
   const [pagina, setPagina] = useState('mapa')
-  const [catalog, setCatalog] = useState(null)
-  const [truckId, setTruckId] = useState('')
   const [routeState, setRouteState] = useState(null)
-  const [catalogError, setCatalogError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [reload, setReload] = useState(0)
   const [retry, setRetry] = useState(0)
   const [slideIndex, setSlideIndex] = useState(0)
   const [followingTruck, setFollowingTruck] = useState(false)
+  // O caminhão está parado na casa do usuário (fim do trajeto), antes de recomeçar.
+  const [arrived, setArrived] = useState(false)
   const truckPositionRef = useRef(null)
 
-  const truck = catalog?.caminhoes.find((item) => String(item.id) === truckId)
-  // Uma resposta de outro caminhão ou de uma versão anterior nunca aparece na seleção atual.
-  const result = routeState?.result && routeState.result.truck?.id === truck?.id && routeState.result.catalogVersion === catalog?.version ? routeState.result : null
+  const result = routeState?.result
+  const rota = result?.rota
+  const endereco = result?.endereco
   const summary = result?.route?.features?.[0]?.properties?.summary
-  const displayError = catalogError || error
+  const routeLatLngs = useMemo(() => (result?.route?.features?.[0]?.geometry?.coordinates || []).map(([lng, lat]) => L.latLng(lat, lng)), [result?.route])
+  const streets = useMemo(() => streetRuns(result?.route), [result?.route])
+  const [streetIndex, setStreetIndex] = useState(-1)
+  const currentStreet = streets[streetIndex]
+  // Trecho de rua de cada parada (pontos da rota e, por último, o endereço do usuário): o que contém
+  // a parada na rota (ou termina nela). Usa o nome do mapa, que pode diferir do cadastro
+  // (ex.: "A. J. Renner" = "Antônio Jacob Renner").
+  const pointStreets = useMemo(() => {
+    const waypoints = result?.route?.features?.[0]?.properties?.way_points || []
+    const stops = [...(result?.points || []).map((point) => point.ordem), HOME_STOP]
+    return stops.map((ordem, index) => {
+      const waypoint = waypoints[index]
+      const containing = streets.findIndex((street) => waypoint >= street.from && waypoint < street.to)
+      return { ordem, street: containing >= 0 ? containing : streets.findIndex((street) => street.to === waypoint) }
+    })
+  }, [result, streets])
+  // Paradas na rua por onde o caminhão passa agora. A mesma rua pode aparecer em duas paradas
+  // (ex.: A. J. Renner); no trecho da parada destaca só ela, fora dele destaca todas com aquele nome.
+  const activeOrders = new Set(pointStreets.filter((point) => point.street === streetIndex && streetIndex >= 0).map((point) => point.ordem))
+  if (!activeOrders.size && currentStreet?.name) {
+    for (const point of pointStreets) if (streets[point.street]?.name === currentStreet.name) activeOrders.add(point.ordem)
+  }
   const mapCenter = useMemo(() => [-30.0218, -51.2117], [])
-  const statusText = !catalog ? 'Carregando caminhões…' : loading ? 'Montando trajeto ponto a ponto…' : 'Rota indisponível'
+  const statusText = loading ? 'Montando o trajeto até o seu endereço…' : 'Rota indisponível'
   const slides = [
-    { label: 'Janela de coleta', value: truck ? `${truck.horarioInicio}–${truck.horarioFim}` : '--' },
-    { label: 'Distância total da rota', value: summary ? formatDistance(summary.distance) : '--' },
-    { label: 'Tempo de deslocamento estimado', value: summary ? formatDuration(summary.duration) : '--' },
+    { label: 'Janela de coleta', value: rota ? `${rota.horarioInicio}–${rota.horarioFim}` : '--' },
+    { label: 'Distância até o seu endereço', value: summary ? formatDistance(summary.distance) : '--' },
+    { label: 'Tempo estimado até você', value: summary ? formatDuration(summary.duration) : '--' },
   ]
   const currentSlide = slides[slideIndex]
   const changeSlide = (step) => setSlideIndex((index) => (index + step + slides.length) % slides.length)
 
+  // A rota vem sempre do cadastro do usuário logado (CEP e endereço), via API PHP.
   useEffect(() => {
     const controller = new AbortController()
-    setCatalogError('')
-    fetch('/api/trucks', { signal: controller.signal })
+    setError('')
+    setLoading(true)
+    setFollowingTruck(false)
+    setArrived(false)
+    fetch('/api/minha-rota', { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         if (response.status === 401) { onSessaoExpirada(); return }
-        const data = await response.json()
-        if (!response.ok) throw new Error(data.error || 'Não foi possível carregar os caminhões.')
-        if (!data.caminhoes?.length) throw new Error('O catálogo não contém caminhões.')
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(data.error || 'Não foi possível carregar a rota do caminhão.')
+        if (!data.route?.features?.[0] || !data.points?.length || !data.itinerary?.length || !data.endereco?.coordinates) {
+          throw new Error('A rota retornada está incompleta.')
+        }
         if (controller.signal.aborted) return
-        setCatalog(data)
-        setTruckId((previous) => data.caminhoes.some((item) => String(item.id) === previous) ? previous : String(data.caminhoes[0].id))
+        setRouteState({ result: data, startedAt: Date.now() })
       })
-      .catch((failure) => { if (!controller.signal.aborted) setCatalogError(failure.message) })
+      .catch((failure) => { if (!controller.signal.aborted) setError(failure.message) })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [onSessaoExpirada, reload])
-
-  useEffect(() => {
-    if (!truck || !catalog) return
-    const controller = new AbortController()
-    const signature = JSON.stringify({ truckId: truck.id, version: catalog.version })
-    setError('')
-    setFollowingTruck(false)
-    const cached = readCachedRoute(usuarioId, truck.id)
-    if (retry === 0 && cached?.request === signature && Date.now() - cached.savedAt < ROUTE_CACHE_MAX_AGE_MS) {
-      setRouteState(cached)
-      setLoading(false)
-      return () => controller.abort()
-    }
-    setRouteState(null)
-    setLoading(true)
-    fetch(`/api/trucks/${truck.id}/route`, {
-      method: 'POST', signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
-    }).then(async (response) => {
-      if (response.status === 401) { onSessaoExpirada(); return }
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Erro ao montar o trajeto.')
-      if (data.catalogVersion !== catalog.version) {
-        if (!controller.signal.aborted) setReload((value) => value + 1)
-        return
-      }
-      if (!data.route?.features?.[0] || data.truck?.id !== truck.id || data.points?.length !== truck.enderecos.length) throw new Error('A rota retornada está incompleta ou pertence a outro caminhão.')
-      if (controller.signal.aborted) return
-      const now = Date.now()
-      const cachedRoute = { request: signature, result: data, startedAt: now, savedAt: now }
-      setRouteState(cachedRoute)
-      saveCachedRoute(usuarioId, truck.id, cachedRoute)
-    }).catch((failure) => {
-      if (!controller.signal.aborted) setError(failure.message)
-    }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
-    return () => controller.abort()
-  }, [catalog, truck, usuarioId, onSessaoExpirada, retry])
+  }, [onSessaoExpirada, retry])
 
   // Renderizar páginas diferentes baseado no estado 'pagina'
   if (pagina !== 'mapa') {
@@ -347,37 +396,66 @@ function Mapa({ usuarioId, onSair, onSessaoExpirada }) {
             maxZoom={19}
           />
           {result?.route && <GeoJSON key={JSON.stringify(result.route.bbox)} data={result.route} style={ROUTE_STYLE} />}
+          {result?.route && currentStreet && <Polyline positions={routeLatLngs.slice(currentStreet.from, currentStreet.to + 1)} pathOptions={CURRENT_STREET_STYLE} />}
           {result?.points.map((point) => (
             <Marker key={point.ordem} position={[point.coordinates[1], point.coordinates[0]]} icon={pointIcon(point.ordem)}>
               <Popup>
-                <strong>Ponto {point.ordem}: {point.rua}</strong><br />{point.label}
+                <strong>Ponto {point.ordem}: {point.rua}{point.numero ? `, ${point.numero}` : ''}</strong>
                 {point.cep && <><br />CEP: {point.cep}</>}
-                {!point.precise && <><br /><small>Localização aproximada; confirme o ponto de coleta.</small></>}
               </Popup>
             </Marker>
           ))}
-          {result?.route && <TruckMarker key={`truck-${JSON.stringify(result.route.bbox)}`} route={result.route} speed={0.5} startedAt={routeState.startedAt} positionRef={truckPositionRef} />}
+          {endereco && (
+            <Marker position={[endereco.coordinates[1], endereco.coordinates[0]]} icon={HOME_ICON}>
+              <Popup>
+                <strong>Seu endereço</strong><br />{endereco.logradouro}
+                {endereco.cep && <><br />CEP: {endereco.cep}</>}
+                {!endereco.precise && <><br /><small>Localização aproximada da sua rua.</small></>}
+              </Popup>
+            </Marker>
+          )}
+          {result?.route && <TruckMarker
+            key={`truck-${JSON.stringify(result.route.bbox)}`}
+            route={result.route}
+            latlngs={routeLatLngs}
+            streets={streets}
+            streetName={currentStreet?.name}
+            arrived={arrived}
+            onStreetChange={setStreetIndex}
+            onArrivedChange={setArrived}
+            speed={0.5}
+            startedAt={routeState.startedAt}
+            positionRef={truckPositionRef}
+          />}
           <RouteViewport route={result?.route} />
           <MapControls route={result?.route} truckPositionRef={truckPositionRef} following={followingTruck} onFollowingChange={setFollowingTruck} />
         </MapContainer>
 
-        <section className='truck-route-panel' aria-label='Rota do caminhão'>
-          <label htmlFor='truck-select'>Caminhão e trajeto</label>
-          <select id='truck-select' value={truckId} onChange={(event) => { setTruckId(event.target.value); setRetry(0) }} disabled={!catalog}>
-            {!catalog && <option value=''>Carregando…</option>}
-            {catalog?.caminhoes.map((item) => <option key={item.id} value={item.id}>Caminhão {item.id} · {item.bairro}</option>)}
-          </select>
-          <button type='button' onClick={() => setReload((value) => value + 1)}>Atualizar catálogo</button>
-          <p role='status'>{loading ? statusText : result ? `${result.points.length} pontos conectados na ordem do arquivo.` : 'Selecione um caminhão para montar a rota.'}</p>
-          {truck && <details>
-            <summary>Ver os {truck.enderecos.length} pontos do trajeto</summary>
-            <ol>{truck.enderecos.map((point, index) => <li key={index}>{point.rua}{point.cep ? ` · ${point.cep}` : ''}</li>)}</ol>
-          </details>}
-          {result?.warnings?.length > 0 && <p className='route-note'>{result.warnings.length} ponto(s) com localização aproximada. Ruas sem número não definem todo o trecho de coleta.</p>}
-          {result && <p className='route-note'>Movimento do caminhão: simulação, sem GPS em tempo real. O tempo estimado não inclui paradas de coleta.</p>}
-          {displayError && <div className='route-error' role='alert'>
-            <p>{displayError}</p>
-            <button type='button' onClick={() => catalogError ? setReload((value) => value + 1) : setRetry((value) => value + 1)}>Tentar novamente</button>
+        <section className='truck-route-panel' aria-labelledby='trajeto-titulo'>
+          <h2 id='trajeto-titulo'>Trajeto do caminhão</h2>
+          {rota && <p className='route-subtitle'>Caminhão {rota.id} · {rota.descricao}</p>}
+          {loading && !result && <p role='status'>Carregando o itinerário…</p>}
+          {result && <ol className='route-points'>
+            {result.itinerary.map((point) => {
+              const active = activeOrders.has(point.ordem)
+              return (
+                <li key={point.ordem} className={!point.localizado ? 'route-point-off' : active ? 'route-point-active' : undefined} aria-current={active ? 'location' : undefined}>
+                  {point.rua}{point.numero ? `, ${point.numero}` : ''}{point.cep ? ` · ${point.cep}` : ''}
+                  {!point.localizado && <small> (não localizado no mapa)</small>}
+                </li>
+              )
+            })}
+            <li
+              className={activeOrders.has(HOME_STOP) ? 'route-point-home route-point-active' : 'route-point-home'}
+              aria-current={activeOrders.has(HOME_STOP) ? 'location' : undefined}
+            >
+              <HomeIcon />
+              <span><strong>Seu endereço</strong> · {endereco.logradouro}{endereco.cep ? ` · ${endereco.cep}` : ''}</span>
+            </li>
+          </ol>}
+          {error && <div className='route-error' role='alert'>
+            <p>{error}</p>
+            <button type='button' onClick={() => setRetry((value) => value + 1)}>Tentar novamente</button>
           </div>}
         </section>
       </main>

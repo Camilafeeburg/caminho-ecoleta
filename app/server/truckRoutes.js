@@ -1,5 +1,5 @@
-import fs from 'node:fs/promises'
-import crypto from 'node:crypto'
+// Trajeto do caminhão até o endereço do usuário logado. A rota e os pontos vêm da API PHP
+// (api/rota_usuario.php), que lê as tabelas criadas por db/caminho-estrutura.sql.
 
 function fail(message, status = 422) {
   const error = new Error(message)
@@ -12,60 +12,103 @@ export function validCoordinates(value) {
     && Math.abs(value[0]) <= 180 && Math.abs(value[1]) <= 90
 }
 
-export async function readTruckCatalog(file) {
-  let text
-  try { text = await fs.readFile(file, 'utf8') } catch {
-    fail('Arquivo caminhao.json não encontrado ou não pode ser lido.', 503)
-  }
-  let data
-  try { data = JSON.parse(text) } catch { fail('O arquivo caminhao.json contém JSON inválido.') }
-  if (!Array.isArray(data?.caminhoes) || !data.caminhoes.length) fail('Informe a lista de caminhões em caminhao.json.')
-  const ids = new Set()
-  const caminhoes = data.caminhoes.map((truck) => {
-    if (!truck || !Number.isSafeInteger(truck.id) || truck.id <= 0 || ids.has(truck.id)) fail('Cada caminhão deve ter um ID inteiro positivo e único.')
-    ids.add(truck.id)
-    if (!Array.isArray(truck.enderecos) || truck.enderecos.length < 2 || truck.enderecos.length > 50) {
-      fail(`Caminhão ${truck.id}: informe entre 2 e 50 pontos.`)
-    }
-    const enderecos = truck.enderecos.map((point, index) => {
-      if (!point || typeof point.rua !== 'string' || !point.rua.trim() || point.rua.length > 200) fail(`Caminhão ${truck.id}, ponto ${index + 1}: rua inválida.`)
-      if (point.coordenadas !== undefined && !validCoordinates(point.coordenadas)) fail(`Caminhão ${truck.id}, ponto ${index + 1}: use coordenadas [longitude, latitude] válidas.`)
-      if (point.cep != null && (typeof point.cep !== 'string' || !/^\d{5}-?\d{3}$/.test(point.cep))) fail(`Caminhão ${truck.id}, ponto ${index + 1}: CEP inválido.`)
-      return { rua: point.rua.trim(), cep: point.cep || null, ...(point.coordenadas ? { coordenadas: point.coordenadas } : {}) }
-    })
-    // O catálogo fornecido pertence a Porto Alegre. Cidade e UF podem ser explicitadas por caminhão.
-    return { id: truck.id, bairro: String(truck.bairro || ''), tipo: String(truck.tipo || ''),
-      horarioInicio: String(truck.horarioInicio || ''), horarioFim: String(truck.horarioFim || ''),
-      cidade: String(truck.cidade || 'Porto Alegre'), uf: String(truck.uf || 'RS'), enderecos }
-  })
-  return { version: crypto.createHash('sha256').update(text).digest('hex'), caminhoes }
+function sameCoordinates(a, b) {
+  return a[0] === b[0] && a[1] === b[1]
 }
 
-export async function buildCatalogRoute(catalog, truckId, restrictions, { geocodePoint, directions }) {
-  if (!Number.isSafeInteger(truckId) || truckId <= 0) fail('Informe um truckId inteiro positivo.', 400)
-  const truck = catalog.caminhoes.find((item) => item.id === truckId)
-  if (!truck) fail('Caminhão não encontrado no catálogo.', 404)
-  const points = []
-  // Consultas sequenciais limitam rajadas ao geocodificador e mantêm o diagnóstico por ponto.
-  for (const [index, point] of truck.enderecos.entries()) {
-    let resolved
-    try {
-      resolved = point.coordenadas
-        ? { coordinates: point.coordenadas, label: point.rua, precise: true, source: 'catalogo' }
-        : await geocodePoint({ address: point.rua, postalcode: point.cep || '', locality: truck.cidade, region: truck.uf })
-      if (!validCoordinates(resolved?.coordinates)) fail('Coordenadas retornadas são inválidas.')
-      if (points.length && points.at(-1).coordinates.every((n, i) => n === resolved.coordinates[i])) {
-        fail('Dois pontos consecutivos foram localizados no mesmo lugar. Informe coordenadas distintas para definir o trecho.')
-      }
-    } catch (error) {
-      fail(`Caminhão ${truck.id}, ponto ${index + 1} (${point.rua}): ${error.message}`, error.status || 502)
+// Distância em metros entre dois pontos [longitude, latitude] (haversine).
+function distance([lng1, lat1], [lng2, lat2]) {
+  const rad = Math.PI / 180
+  const a = Math.sin(((lat2 - lat1) * rad) / 2) ** 2
+    + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(((lng2 - lng1) * rad) / 2) ** 2
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(a))
+}
+
+// Índice do ponto da rota depois do qual o caminhão passa pelo endereço: o encaixe que menos
+// aumenta o percurso entre dois pontos seguidos (ou depois do último ponto).
+export function homeInsertionIndex(coordinates, home) {
+  let best = 0
+  let bestCost = Infinity
+  coordinates.forEach((point, index) => {
+    const next = coordinates[index + 1]
+    const cost = next ? distance(point, home) + distance(home, next) - distance(point, next) : distance(point, home)
+    if (cost < bestCost) {
+      best = index
+      bestCost = cost
     }
-    points.push({ ...resolved, ordem: index + 1, rua: point.rua, cep: point.cep })
+  })
+  return best
+}
+
+// Distância do ponto mais próximo da rota.
+function distanceToRoute(coordinates, home) {
+  return Math.min(...coordinates.map((point) => distance(point, home)))
+}
+
+// Mais longe que isso de todos os pontos da rota, o endereço localizado provavelmente é uma rua
+// com o mesmo nome em outro bairro (ex.: há mais de uma Rua São Jorge em Porto Alegre).
+const MAX_HOME_DISTANCE_M = 3000
+
+// Endereço do usuário fora da lista de pontos: localiza no mapa, conferindo se ficou perto da rota.
+async function locateHome(endereco, routeCoordinates, geocodeAddress) {
+  let home = await geocodeAddress(endereco)
+  if (validCoordinates(home?.coordinates) && distanceToRoute(routeCoordinates, home.coordinates) <= MAX_HOME_DISTANCE_M) return home
+  // Rua localizada longe da rota: usa o centro do bairro do cadastro.
+  if (endereco.bairro) {
+    home = await geocodeAddress({ ...endereco, logradouro: '' })
+    if (validCoordinates(home?.coordinates) && distanceToRoute(routeCoordinates, home.coordinates) <= MAX_HOME_DISTANCE_M) {
+      return { ...home, precise: false }
+    }
   }
-  const route = await directions(points.map((point) => point.coordinates), restrictions)
+  fail('Não foi possível localizar o seu endereço perto da rota do caminhão. Confira o CEP e o endereço do seu cadastro.')
+}
+
+export async function buildUserRoute(data, restrictions, { geocodeAddress, directions }) {
+  const rota = data?.rota
+  const endereco = data?.endereco
+  if (!rota || !Array.isArray(rota.pontos) || !endereco) fail('A API de rotas retornou dados inválidos.', 502)
+
+  const located = rota.pontos.filter((point) => validCoordinates(point.coordenadas))
+  if (!located.length) fail(`A rota ${rota.id} não tem pontos localizados no mapa.`)
+  const toPoint = (point) => ({ ordem: point.ordem, rua: point.rua, numero: point.numero, cep: point.cep, coordinates: point.coordenadas })
+
+  // O trajeto sempre termina no endereço do usuário.
+  let home
+  let points
+  const userPoint = located.find((point) => point.ordem === rota.pontoUsuario)
+  if (userPoint) {
+    // O endereço é um ponto da rota (mesmo CEP ou mesma rua): o trajeto vai até ele, com as coordenadas da rota.
+    home = { label: endereco.logradouro, coordinates: userPoint.coordenadas, precise: true }
+    points = located.filter((point) => point.ordem < userPoint.ordem).map(toPoint)
+    if (!points.length) fail('O seu endereço é o ponto de partida do caminhão; não há trajeto até ele.')
+  } else {
+    // Fora da lista: entra depois do ponto da rota em que menos desvia o caminhão.
+    home = await locateHome(endereco, located.map((point) => point.coordenadas), geocodeAddress)
+    const lastIndex = homeInsertionIndex(located.map((point) => point.coordenadas), home.coordinates)
+    points = located.slice(0, lastIndex + 1).map(toPoint)
+    // Endereço exatamente sobre o último ponto: esse ponto passa a ser o endereço.
+    if (sameCoordinates(points.at(-1).coordinates, home.coordinates)) points.pop()
+    if (!points.length) fail('O seu endereço é o ponto de partida do caminhão; não há trajeto até ele.')
+  }
+  const waypoints = [...points.map((point) => point.coordinates), home.coordinates]
+
+  const route = await directions(waypoints, restrictions)
   if (route?.features?.[0]?.geometry?.type !== 'LineString' || route.features[0].geometry.coordinates.length < 2) {
     fail('O serviço retornou uma geometria de rota inválida.', 502)
   }
-  return { truck, catalogVersion: catalog.version, points, start: points[0], end: points.at(-1), route, restrictions,
-    warnings: points.filter((point) => !point.precise).map((point) => `Ponto ${point.ordem}: localização aproximada de ${point.rua}.`) }
+
+  // Itinerário até o endereço (a última parada), incluindo ruas sem localização no mapa que ficam no caminho.
+  const lastOrder = userPoint ? userPoint.ordem - 1 : points.at(-1).ordem
+  const itinerary = rota.pontos
+    .filter((point) => point.ordem <= lastOrder)
+    .map((point) => ({ ordem: point.ordem, rua: point.rua, numero: point.numero, cep: point.cep, localizado: validCoordinates(point.coordenadas) }))
+
+  return {
+    rota: { id: rota.id, descricao: rota.descricao, tipo: rota.tipo, horarioInicio: rota.horarioInicio, horarioFim: rota.horarioFim, criterio: rota.criterio, pontoUsuario: userPoint?.ordem ?? null },
+    endereco: { ...endereco, label: home.label, coordinates: home.coordinates, precise: home.precise },
+    points,
+    itinerary,
+    route,
+    restrictions,
+  }
 }

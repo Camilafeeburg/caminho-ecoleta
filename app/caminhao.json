@@ -9,51 +9,63 @@
         "enderecos": [
           {
             "cep": "90240-005",
-            "rua": "Rua São Pedro"
+            "rua": "Rua São Pedro",
+            "coordenadas": [-51.201981, -30.010539]
           },
           {
             "cep": "90240-000",
-            "rua": "Avenida Pernambuco"
+            "rua": "Avenida Pernambuco",
+            "coordenadas": [-51.196729, -29.998482]
           },
           {
             "cep": "90240-610",
-            "rua": "Rua Dona Margarida"
+            "rua": "Rua Dona Margarida",
+            "coordenadas": [-51.197514, -29.998955]
           },
           {
             "cep": "90245-000",
-            "rua": "Avenida A. J. Renner"
+            "rua": "Avenida A. J. Renner",
+            "coordenadas": [-51.195803, -29.991892]
           },
           {
             "cep": "90250-000",
-            "rua": "Rua Monsenhor Felipe Diehl"
+            "rua": "Rua Monsenhor Felipe Diehl",
+            "coordenadas": [-51.196586, -29.995687]
           },
           {
             "cep": "90240-210",
-            "rua": "Rua Simão Kappel"
+            "rua": "Rua Simão Kappel",
+            "coordenadas": [-51.198431, -29.993556]
           },
           {
             "cep": "90240-550",
-            "rua": "Rua São Jorge"
+            "rua": "Rua São Jorge",
+            "coordenadas": [-51.200892, -29.994343]
           },
           {
             "cep": "90240-110",
-            "rua": "Rua Frederico Mentz"
+            "rua": "Rua Frederico Mentz",
+            "coordenadas": [-51.200409, -29.99073]
           },
           {
             "cep": "90240-000",
-            "rua": "Rua General Marcos Kruchin"
+            "rua": "Rua General Marcos Kruchin",
+            "coordenadas": [-51.196355, -29.985335]
           },
           {
             "cep": "90250-000",
-            "rua": "Avenida A. J. Renner"
+            "rua": "Avenida A. J. Renner",
+            "coordenadas": [-51.193917, -29.986351]
           },
           {
             "cep": "90250-210",
-            "rua": "Rua Padre Maximiliano Kolbe"
+            "rua": "Rua Padre Maximiliano Kolbe",
+            "coordenadas": [-51.191243, -29.982018]
           },
           {
             "cep": "90250-210",
-            "rua": "Avenida Palmira Gobbi"
+            "rua": "Avenida Palmira Gobbi",
+            "coordenadas": [-51.191732, -29.987012]
           }
         ]
       },
@@ -66,11 +78,13 @@
         "enderecos": [
           {
             "cep": "90230-010",
-            "rua": "Rua Voluntários da Pátria"
+            "rua": "Rua Voluntários da Pátria",
+            "coordenadas": [-51.209913, -30.009653]
           },
           {
             "cep": "90035-020",
-            "rua": "Rua Comendador Álvaro Guaspari"
+            "rua": "Rua Comendador Álvaro Guaspari",
+            "coordenadas": [-51.21674, -30.023231]
           },
           {
             "cep": "90035-024",
@@ -82,31 +96,38 @@
           },
           {
             "cep": "90220-010",
-            "rua": "Rua Santo Antônio"
+            "rua": "Rua Santo Antônio",
+            "coordenadas": [-51.214209, -30.031428]
           },
           {
             "cep": null,
-            "rua": "Rua Irmão José Otão"
+            "rua": "Rua Irmão José Otão",
+            "coordenadas": [-51.21455, -30.031144]
           },
           {
             "cep": null,
-            "rua": "Rua Vasco da Gama"
+            "rua": "Rua Vasco da Gama",
+            "coordenadas": [-51.20683, -30.032183]
           },
           {
             "cep": null,
-            "rua": "Rua Mariante"
+            "rua": "Rua Mariante",
+            "coordenadas": [-51.204399, -30.02815]
           },
           {
             "cep": null,
-            "rua": "Avenida Goethe"
+            "rua": "Avenida Goethe",
+            "coordenadas": [-51.200375, -30.025058]
           },
           {
             "cep": null,
-            "rua": "Rua Mostardeiro"
+            "rua": "Rua Mostardeiro",
+            "coordenadas": [-51.205095, -30.028738]
           },
           {
             "cep": "90010-380",
-            "rua": "Rua Mostardeiro, 820"
+            "rua": "Rua Mostardeiro, 820",
+            "coordenadas": [-51.198825, -30.028598]
           }
         ]
       },
@@ -119,35 +140,43 @@
         "enderecos": [
           {
             "cep": "90020-000",
-            "rua": "Rua dos Andradas"
+            "rua": "Rua dos Andradas",
+            "coordenadas": [-51.238029, -30.032754]
           },
           {
             "cep": "90020-020",
-            "rua": "Avenida Borges de Medeiros"
+            "rua": "Avenida Borges de Medeiros",
+            "coordenadas": [-51.227975, -30.033737]
           },
           {
             "cep": "90020-160",
-            "rua": "Praça Dom Feliciano"
+            "rua": "Praça Dom Feliciano",
+            "coordenadas": [-51.223129, -30.02987]
           },
           {
             "cep": null,
-            "rua": "Avenida Independência"
+            "rua": "Avenida Independência",
+            "coordenadas": [-51.221763, -30.029602]
           },
           {
             "cep": null,
-            "rua": "Avenida Osvaldo Aranha"
+            "rua": "Avenida Osvaldo Aranha",
+            "coordenadas": [-51.219882, -30.032543]
           },
           {
             "cep": null,
-            "rua": "Avenida José Bonifácio"
+            "rua": "Avenida José Bonifácio",
+            "coordenadas": [-51.215784, -30.039449]
           },
           {
             "cep": null,
-            "rua": "Rua Santana"
+            "rua": "Rua Santana",
+            "coordenadas": [-51.214228, -30.039317]
           },
           {
             "cep": "90040-320",
-            "rua": "Rua Vieira de Castro, 215"
+            "rua": "Rua Vieira de Castro, 215",
+            "coordenadas": [-51.212137, -30.039594]
           }
         ]
       },
@@ -160,43 +189,53 @@
         "enderecos": [
           {
             "cep": "90560-002",
-            "rua": "Rua Dom Pedro II"
+            "rua": "Rua Dom Pedro II",
+            "coordenadas": [-51.186729, -30.015958]
           },
           {
             "cep": "90560-003",
-            "rua": "Avenida Cristóvão Colombo"
+            "rua": "Avenida Cristóvão Colombo",
+            "coordenadas": [-51.182407, -30.016996]
           },
           {
             "cep": null,
-            "rua": "Travessa São Jacó"
+            "rua": "Travessa São Jacó",
+            "coordenadas": [-51.181835, -30.015718]
           },
           {
             "cep": null,
-            "rua": "Rua Doutor Eduardo Chartier"
+            "rua": "Rua Doutor Eduardo Chartier",
+            "coordenadas": [-51.180493, -30.013967]
           },
           {
             "cep": null,
-            "rua": "Rua Ari Marinho"
+            "rua": "Rua Ari Marinho",
+            "coordenadas": [-51.179584, -30.013254]
           },
           {
             "cep": null,
-            "rua": "Rua Marechal José Inácio da Silva"
+            "rua": "Rua Marechal José Inácio da Silva",
+            "coordenadas": [-51.178511, -30.014177]
           },
           {
             "cep": null,
-            "rua": "Rua Pistóia"
+            "rua": "Rua Pistóia",
+            "coordenadas": [-51.176505, -30.011872]
           },
           {
             "cep": null,
-            "rua": "Avenida Brasiliano Índio de Moraes"
+            "rua": "Avenida Brasiliano Índio de Moraes",
+            "coordenadas": [-51.173397, -30.011554]
           },
           {
             "cep": null,
-            "rua": "Avenida Assis Brasil"
+            "rua": "Avenida Assis Brasil",
+            "coordenadas": [-51.167662, -30.011771]
           },
           {
             "cep": "91360-000",
-            "rua": "Avenida do Forte, 290"
+            "rua": "Avenida do Forte, 290",
+            "coordenadas": [-51.153251, -30.01092]
           }
         ]
       }

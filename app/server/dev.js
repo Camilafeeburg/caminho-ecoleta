@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url'
 
 const projectDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const processes = [
-  spawn(process.execPath, ['server/index.js'], { cwd: projectDirectory, stdio: 'inherit' }),
+  // --watch reinicia o Express quando server/*.js muda; sem ele, alterações no servidor só valem após reiniciar o npm run dev.
+  spawn(process.execPath, ['--watch', 'server/index.js'], { cwd: projectDirectory, stdio: 'inherit' }),
   spawn(process.execPath, ['node_modules/vite/bin/vite.js'], { cwd: projectDirectory, stdio: 'inherit' }),
 ]
 

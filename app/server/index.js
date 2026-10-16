@@ -6,10 +6,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createAuth } from './auth.js'
-import { readTruckCatalog, buildCatalogRoute } from './truckRoutes.js'
+import { buildUserRoute } from './truckRoutes.js'
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
-const TRUCK_CATALOG_FILE = path.resolve(process.env.TRUCK_CATALOG_FILE?.trim() || path.join(currentDirectory, '..', 'caminhao.json'))
 const app = express()
 const port = Number(process.env.PORT || 8787)
 const apiKey = process.env.ORS_API_KEY?.trim()
@@ -19,6 +18,8 @@ const USER_API_URL = process.env.USER_API_URL?.trim() || `${API_BASE_URL}/dados_
 const USER_API_FILE = path.resolve(process.env.USER_API_FILE?.trim() || path.join(currentDirectory, '..', '..', 'api', 'dados_usuario.php'))
 const USER_API_TIMEOUT_MS = 10_000
 const USUARIOS_API_URL = process.env.USUARIOS_API_URL?.trim() || `${API_BASE_URL}/usuarios.php`
+// Rota do caminhão que atende o endereço do usuário (tabelas de db/caminho-estrutura.sql).
+const ROTA_USUARIO_API_URL = process.env.ROTA_USUARIO_API_URL?.trim() || `${API_BASE_URL}/rota_usuario.php`
 const SESSION_SECRET = process.env.SESSION_SECRET?.trim() || crypto.randomBytes(32).toString('hex')
 // Token que a API PHP (pasta api) exige no cabeçalho X-Api-Token (o mesmo INTERNAL_API_TOKEN do .env).
 const INTERNAL_API_TOKEN = process.env.INTERNAL_API_TOKEN?.trim() || ''
@@ -169,6 +170,7 @@ async function geocode(place) {
     label: feature.properties?.label || place.address,
     coordinates: feature.geometry.coordinates,
     precise: feature.properties?.match_type === 'exact',
+    layer: feature.properties?.layer,
   }
 }
 
@@ -249,38 +251,31 @@ function truckRouteCached(start, end, restrictions) {
   return cachedOrsRequest(key, ROUTE_CACHE_MAX_AGE_MS, () => fetchTruckRoute([start, end], restrictions))
 }
 
-function catalogGeocodeCached(place) {
-  const key = `catalog-geocode-v1:${JSON.stringify(place)}`
-  return cachedOrsRequest(key, GEOCODE_CACHE_MAX_AGE_MS, async () => {
-    let feature = await geocodeStructured(place)
-    // Alguns CEPs do catálogo podem divergir da rua. Retenta pela rua/cidade; nunca usa o centro do bairro.
-    const streetLevel = (candidate) => ['address', 'street'].includes(candidate?.properties?.layer)
-    if (!streetLevel(feature) && place.postalcode) feature = await geocodeStructured({ ...place, postalcode: '' })
-    if (!streetLevel(feature)) throw createHttpError('Rua não localizada com precisão suficiente. Informe coordenadas no catálogo.', 422)
-    const locality = feature.properties?.locality
-    if (locality && locality.toLocaleLowerCase('pt-BR') !== place.locality.toLocaleLowerCase('pt-BR')) {
-      throw createHttpError('O geocodificador retornou outra cidade. Informe coordenadas no catálogo.', 422)
-    }
-    return { label: feature.properties?.label || place.address, coordinates: feature.geometry?.coordinates,
-      precise: feature.properties?.layer === 'address' && feature.properties?.match_type === 'exact', source: 'geocodificacao' }
+// Endereço do usuário no mapa. Sem rua nem bairro localizados, o geocodificador devolve só o centro
+// da cidade, o que levaria a um trajeto errado.
+async function geocodeUserAddress(endereco) {
+  const home = await geocodeCached({
+    address: String(endereco.logradouro || ''),
+    neighbourhood: String(endereco.bairro || ''),
+    locality: String(endereco.cidade || ''),
+    region: String(endereco.uf || ''),
   })
+  if (CITY_LEVEL_LAYERS.has(home.layer)) {
+    throw createHttpError('Não foi possível localizar o seu endereço no mapa. Confira o CEP e o endereço do seu cadastro.', 422)
+  }
+  return home
 }
 
-app.get('/api/trucks', auth.requireSession, async (_request, response, next) => {
+// Trajeto do caminhão que atende o usuário logado, do primeiro ponto da rota até o endereço dele.
+// Sempre usa o id da sessão: não há como pedir a rota de outro usuário ou de outro caminhão.
+app.get('/api/minha-rota', auth.requireSession, async (request, response, next) => {
   try {
-    response.set('Cache-Control', 'no-store').json(await readTruckCatalog(TRUCK_CATALOG_FILE))
-  } catch (error) { next(error) }
-})
-
-app.post('/api/trucks/:id/route', auth.requireSession, async (request, response, next) => {
-  try {
-    if (!/^[1-9]\d*$/.test(request.params.id)) throw createHttpError('ID do caminhão inválido.', 400)
-    const catalog = await readTruckCatalog(TRUCK_CATALOG_FILE)
-    const restrictions = parseVehicle(request.body?.vehicle ?? {})
-    const result = await buildCatalogRoute(catalog, Number(request.params.id), restrictions, {
-      geocodePoint: catalogGeocodeCached,
+    const data = await fetchUserApi(ROTA_USUARIO_API_URL, request.usuario.id)
+    assertApiKey()
+    const result = await buildUserRoute(data, parseVehicle({}), {
+      geocodeAddress: geocodeUserAddress,
       directions: (coordinates, vehicle) => {
-        const key = `catalog-route-v1:${JSON.stringify([coordinates, vehicle])}`
+        const key = `user-route-v1:${JSON.stringify([coordinates, vehicle])}`
         return cachedOrsRequest(key, ROUTE_CACHE_MAX_AGE_MS, () => fetchTruckRoute(coordinates, vehicle))
       },
     })
@@ -293,8 +288,13 @@ app.get('/api/health', (_request, response) => {
 })
 
 // Dados da rota do usuário logado, montados pelo dados_usuario.php a partir do cadastro.
-async function fetchUsuario(userId) {
-  const url = new URL(USER_API_URL)
+function fetchUsuario(userId) {
+  return fetchUserApi(USER_API_URL, userId)
+}
+
+// Chama uma API PHP da pasta api que recebe o id do usuário (dados_usuario.php, rota_usuario.php).
+async function fetchUserApi(apiUrl, userId) {
+  const url = new URL(apiUrl)
   url.searchParams.set('id', String(userId))
   let userResponse
   try {
@@ -307,12 +307,12 @@ async function fetchUsuario(userId) {
     if (error.name === 'TimeoutError' || error.name === 'AbortError') {
       throw createHttpError('A API de usuários demorou demais para responder.', 504)
     }
-    throw createHttpError(`Não foi possível conectar à API de usuários (${USER_API_URL}).`, 502)
+    throw createHttpError(`Não foi possível conectar à API de usuários (${apiUrl}).`, 502)
   }
 
   const data = await userResponse.json().catch(() => null)
   if (userResponse.status === 403) {
-    console.error('dados_usuario.php recusou o token: confira INTERNAL_API_TOKEN no .env e api/config.php.')
+    console.error(`${path.basename(url.pathname)} recusou o token: confira INTERNAL_API_TOKEN no .env e api/config.php.`)
     throw createHttpError('O servidor não está autorizado a consultar a API de usuários.', 502)
   }
   if (!userResponse.ok || !data) {

@@ -1,0 +1,2 @@
+# Arquivos incluídos pelas páginas do admin; não são acessados direto pelo navegador.
+Require all denied
