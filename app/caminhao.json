@@ -1,0 +1,204 @@
+{
+    "caminhoes": [
+      {
+        "id": 1,
+        "bairro": "São Geraldo / Humaitá",
+        "tipo": "Coleta Seletiva",
+        "horarioInicio": "18:00",
+        "horarioFim": "21:00",
+        "enderecos": [
+          {
+            "cep": "90240-005",
+            "rua": "Rua São Pedro"
+          },
+          {
+            "cep": "90240-000",
+            "rua": "Avenida Pernambuco"
+          },
+          {
+            "cep": "90240-610",
+            "rua": "Rua Dona Margarida"
+          },
+          {
+            "cep": "90245-000",
+            "rua": "Avenida A. J. Renner"
+          },
+          {
+            "cep": "90250-000",
+            "rua": "Rua Monsenhor Felipe Diehl"
+          },
+          {
+            "cep": "90240-210",
+            "rua": "Rua Simão Kappel"
+          },
+          {
+            "cep": "90240-550",
+            "rua": "Rua São Jorge"
+          },
+          {
+            "cep": "90240-110",
+            "rua": "Rua Frederico Mentz"
+          },
+          {
+            "cep": "90240-000",
+            "rua": "Rua General Marcos Kruchin"
+          },
+          {
+            "cep": "90250-000",
+            "rua": "Avenida A. J. Renner"
+          },
+          {
+            "cep": "90250-210",
+            "rua": "Rua Padre Maximiliano Kolbe"
+          },
+          {
+            "cep": "90250-210",
+            "rua": "Avenida Palmira Gobbi"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "bairro": "Moinhos de Vento",
+        "tipo": "Coleta Seletiva",
+        "horarioInicio": "18:00",
+        "horarioFim": "21:00",
+        "enderecos": [
+          {
+            "cep": "90230-010",
+            "rua": "Rua Voluntários da Pátria"
+          },
+          {
+            "cep": "90035-020",
+            "rua": "Rua Comendador Álvaro Guaspari"
+          },
+          {
+            "cep": "90035-024",
+            "rua": "Rua João Adão Pacheco Dornelles"
+          },
+          {
+            "cep": "90035-022",
+            "rua": "Rua Walmor Paulo Sauter"
+          },
+          {
+            "cep": "90220-010",
+            "rua": "Rua Santo Antônio"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Irmão José Otão"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Vasco da Gama"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Mariante"
+          },
+          {
+            "cep": null,
+            "rua": "Avenida Goethe"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Mostardeiro"
+          },
+          {
+            "cep": "90010-380",
+            "rua": "Rua Mostardeiro, 820"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "bairro": "Centro Histórico / Farroupilha",
+        "tipo": "Coleta Seletiva",
+        "horarioInicio": "18:00",
+        "horarioFim": "21:00",
+        "enderecos": [
+          {
+            "cep": "90020-000",
+            "rua": "Rua dos Andradas"
+          },
+          {
+            "cep": "90020-020",
+            "rua": "Avenida Borges de Medeiros"
+          },
+          {
+            "cep": "90020-160",
+            "rua": "Praça Dom Feliciano"
+          },
+          {
+            "cep": null,
+            "rua": "Avenida Independência"
+          },
+          {
+            "cep": null,
+            "rua": "Avenida Osvaldo Aranha"
+          },
+          {
+            "cep": null,
+            "rua": "Avenida José Bonifácio"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Santana"
+          },
+          {
+            "cep": "90040-320",
+            "rua": "Rua Vieira de Castro, 215"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "bairro": "Higienópolis / Cristo Redentor",
+        "tipo": "Coleta Seletiva",
+        "horarioInicio": "18:00",
+        "horarioFim": "21:00",
+        "enderecos": [
+          {
+            "cep": "90560-002",
+            "rua": "Rua Dom Pedro II"
+          },
+          {
+            "cep": "90560-003",
+            "rua": "Avenida Cristóvão Colombo"
+          },
+          {
+            "cep": null,
+            "rua": "Travessa São Jacó"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Doutor Eduardo Chartier"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Ari Marinho"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Marechal José Inácio da Silva"
+          },
+          {
+            "cep": null,
+            "rua": "Rua Pistóia"
+          },
+          {
+            "cep": null,
+            "rua": "Avenida Brasiliano Índio de Moraes"
+          },
+          {
+            "cep": null,
+            "rua": "Avenida Assis Brasil"
+          },
+          {
+            "cep": "91360-000",
+            "rua": "Avenida do Forte, 290"
+          }
+        ]
+      }
+    ]
+  }
