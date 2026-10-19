@@ -1,8 +1,12 @@
+import fs from 'node:fs'
 import dotenv from 'dotenv'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// Um único .env na raiz do projeto, o mesmo lido pela api e pelo website (PHP).
-export const ENV_FILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '.env')
+const rootEnv = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '.env')
+const appEnv = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.env')
+
+// Um único .env na raiz do projeto, com fallback caso colocado em app/.env.
+export const ENV_FILE = fs.existsSync(rootEnv) ? rootEnv : appEnv
 
 dotenv.config({ path: ENV_FILE })

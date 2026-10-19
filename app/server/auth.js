@@ -68,15 +68,25 @@ export function createAuth({ usuariosApiUrl, secret, internalToken }) {
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(USUARIOS_API_TIMEOUT_MS),
       })
-    } catch {
+    } catch (error) {
+      console.error(`auth.js: falha ao conectar na API de usuários em ${usuariosApiUrl}:`, error.message)
       throw httpError('Não foi possível conectar ao serviço de usuários.', 502)
     }
-    const data = await response.json().catch(() => null)
+
+    const rawText = await response.text()
+    let data
+    try {
+      data = JSON.parse(rawText)
+    } catch {
+      data = null
+    }
+
     if (response.status === 403) {
-      console.error('usuarios.php recusou o token: confira INTERNAL_API_TOKEN no .env e api/config.php.')
+      console.error(`auth.js: usuarios.php recusou o token (${usuariosApiUrl}). Confira INTERNAL_API_TOKEN no .env. Resposta:`, rawText)
       throw httpError('O serviço de usuários está indisponível no momento.', 502)
     }
     if (!data || response.status >= 500) {
+      console.error(`auth.js: erro na chamada a ${usuariosApiUrl} (status HTTP ${response.status}). Resposta:`, rawText.slice(0, 300))
       throw httpError(data?.mensagem || 'O serviço de usuários está indisponível no momento.', 502)
     }
     return { status: response.status, data }
