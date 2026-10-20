@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import Sidebar from '../../sidebar'
+import MeuPerfil from './MeuPerfil'
 import MudarLocal from './MudarLocal'
 import ColSeletiva from './ColSeletiva'
 import Configuracoes from './Configuracoes'
@@ -287,7 +288,7 @@ function Chevron({ direction }) {
   )
 }
 
-function Mapa({ onSair, onSessaoExpirada }) {
+function Mapa({ usuarioSessao, onSair, onSessaoExpirada }) {
   const [pagina, setPagina] = useState('mapa')
   const [routeState, setRouteState] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -370,6 +371,7 @@ function Mapa({ onSair, onSessaoExpirada }) {
           <Sidebar onSair={onSair} onMudarPagina={setPagina} />
         </header>
 
+        {pagina === 'perfil' && <MeuPerfil usuario={usuarioSessao} endereco={endereco} onAbrirConfiguracoes={() => setPagina('configuracoes')} />}
         {pagina === 'mudarlocal' && <MudarLocal onVoltar={() => setPagina('mapa')} />}
         {pagina === 'colseletiva' && <ColSeletiva onVoltar={() => setPagina('mapa')} />}
         {pagina === 'configuracoes' && <Configuracoes onVoltar={() => setPagina('mapa')} />}

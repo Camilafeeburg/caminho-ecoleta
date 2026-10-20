@@ -1,4 +1,4 @@
-import "./Meu perfil.css";
+import "./MeuPerfil.css";
 
 
 function iniciais(nome = "") {
