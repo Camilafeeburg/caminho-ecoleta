@@ -1,4 +1,4 @@
-import "./Meu perfil.css";
+import "./Pages/Mapa/MeuPerfil.css";
 
 function iniciais(nome = "") {
   return nome
