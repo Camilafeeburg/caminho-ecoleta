@@ -7,6 +7,7 @@ import caminhaoUrl from './assets/caminhao.png'
 import { apiFetch } from './api'
 import './Pages/auth.css'
 
+
 // Sem sessão: Login (ou Cadastro). Com sessão: Mapa. O servidor também recusa as rotas do mapa sem login.
 function App() {
   const [sessao, setSessao] = useState({ estado: 'carregando', usuario: null })

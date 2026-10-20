@@ -2,6 +2,7 @@
 import Sidebar from '../../sidebar'
 import MudarLocal from './MudarLocal'
 import ColSeletiva from './ColSeletiva'
+import MeuPerfil from './MeuPerfil'
 import Configuracoes from './Configuracoes'
 import './Mapa.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -371,6 +372,7 @@ function Mapa({ onSair, onSessaoExpirada }) {
         </header>
 
         {pagina === 'mudarlocal' && <MudarLocal onVoltar={() => setPagina('mapa')} />}
+        {pagina === 'meuperfil' && <MeuPerfil onVoltar={() => setPagina('mapa')} />}
         {pagina === 'colseletiva' && <ColSeletiva onVoltar={() => setPagina('mapa')} />}
         {pagina === 'configuracoes' && <Configuracoes onVoltar={() => setPagina('mapa')} />}
       </div>
