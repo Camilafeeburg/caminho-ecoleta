@@ -60,6 +60,7 @@ export default function MeuPerfil({
             onClick={onAbrirConfiguracoes}
           >
             Configurações
+        
           </button>
         </nav>
       </div>

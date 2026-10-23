@@ -374,7 +374,8 @@ function Mapa({ usuarioSessao, onSair, onSessaoExpirada }) {
         {pagina === 'mudarlocal' && <MudarLocal onVoltar={() => setPagina('mapa')} />}
         {pagina === 'perfil' && <MeuPerfil usuario={usuarioSessao} endereco={endereco} onAbrirConfiguracoes={() => setPagina('configuracoes')} />}
         {pagina === 'colseletiva' && <ColSeletiva onVoltar={() => setPagina('mapa')} />}
-        {pagina === 'configuracoes' && <Configuracoes onVoltar={() => setPagina('mapa')} />}
+       {pagina === 'configuracoes' && (<Configuracoes onVoltar={() => setPagina('mapa')} onAbrirPerfil={() => setPagina('perfil')}/>
+)}
       </div>
     )
   }
