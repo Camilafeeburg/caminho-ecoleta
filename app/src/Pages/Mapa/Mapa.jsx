@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import Sidebar from '../../sidebar'
-import MeuPerfil from '../../MeuPerfil'
+import MeuPerfil from './MeuPerfil'
 import MudarLocal from './MudarLocal'
 import ColSeletiva from './ColSeletiva'
 import Configuracoes from './Configuracoes'

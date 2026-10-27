@@ -1,0 +1,119 @@
+
+/* =====================================
+   TEMA GLOBAL DO ÉCOLETA
+   ===================================== */
+
+:root {
+  color-scheme: light;
+
+  --tema-fundo: #eff4ee;
+  --tema-superficie: #ffffff;
+  --tema-texto: #102b22;
+  --tema-secundario: #64746b;
+  --tema-borda: #dce5dc;
+  --tema-campo: #ffffff;
+}
+
+:root.tema-escuro {
+  color-scheme: dark;
+
+  --tema-fundo: #101713;
+  --tema-superficie: #1b2520;
+  --tema-texto: #eff4ee;
+  --tema-secundario: #b0beb4;
+  --tema-borda: #35443a;
+  --tema-campo: #202c25;
+}
+
+/* Fundo global */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--tema-fundo);
+  color: var(--tema-texto);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+:root.tema-escuro body,
+:root.tema-escuro #root {
+  background-color: var(--tema-fundo);
+  color: var(--tema-texto);
+}
+
+/* Páginas principais */
+
+:root.tema-escuro .config,
+:root.tema-escuro .app,
+:root.tema-escuro .app-pagina {
+  background-color: var(--tema-fundo);
+  color: var(--tema-texto);
+}
+
+/* Superfícies e cartões */
+
+:root.tema-escuro .config-secao,
+:root.tema-escuro .auth-card,
+:root.tema-escuro .card {
+  background-color: var(--tema-superficie);
+  color: var(--tema-texto);
+  border-color: var(--tema-borda);
+}
+
+/* Formulários */
+
+:root.tema-escuro input,
+:root.tema-escuro textarea,
+:root.tema-escuro select {
+  background-color: var(--tema-campo);
+  color: var(--tema-texto);
+  border-color: var(--tema-borda);
+}
+
+:root.tema-escuro input::placeholder,
+:root.tema-escuro textarea::placeholder {
+  color: var(--tema-secundario);
+}
+
+/* Textos secundários */
+
+:root.tema-escuro p,
+:root.tema-escuro small {
+  color: var(--tema-secundario);
+}
+
+/* Mapa: painel de informações da rota */
+
+:root.tema-escuro .truck-route-panel {
+  background-color: var(--tema-superficie);
+  color: var(--tema-texto);
+}
+
+:root.tema-escuro .truck-route-panel .route-subtitle {
+  color: var(--tema-secundario);
+}
+
+:root.tema-escuro .truck-route-panel .route-point-off {
+  color: var(--tema-secundario);
+}
+
+:root.tema-escuro .truck-route-panel .route-point-active,
+:root.tema-escuro .truck-route-panel .route-point-home {
+  color: #d8efb0;
+}
+
+/* Etiqueta da rua */
+
+:root.tema-escuro .leaflet-tooltip.truck-street-label {
+  background-color: var(--tema-superficie);
+  color: #d8efb0;
+  border-color: #d8efb0;
+}
+
+:root.tema-escuro .leaflet-tooltip-top.truck-street-label::before {
+  border-top-color: #d8efb0;
+}

@@ -82,14 +82,6 @@ function Login({ onCadastro, onLogin, aviso, emailInicial = "" }) {
           {carregando ? "Entrando..." : "Entrar"}
         </button>
       </form>
-
-      <button
-        type="button"
-        className="auth-link-secundario"
-        onClick={() => setMensagem({ tipo: "info", texto: "A recuperação de senha ainda não está disponível." })}
-      >
-        Esqueceu a senha?
-      </button>
     </AuthLayout>
   );
 }

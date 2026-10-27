@@ -1,5 +1,4 @@
-
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './Configuracoes.css'
 
 function Alternador({ ativo, onChange, id, descricao }) {
@@ -26,7 +25,21 @@ export default function Configuracoes({
 }) {
   const [notificacoes, setNotificacoes] = useState(true)
   const [lembretes, setLembretes] = useState(true)
-  const [modoEscuro, setModoEscuro] = useState(false)
+  const [modoEscuro, setModoEscuro] = useState(
+  () => localStorage.getItem('ecoleta-modo-escuro') === 'true'
+)
+
+useEffect(() => {
+  document.documentElement.classList.toggle(
+    'tema-escuro',
+    modoEscuro
+  )
+
+  localStorage.setItem(
+    'ecoleta-modo-escuro',
+    String(modoEscuro)
+  )
+}, [modoEscuro])
 
   return (
     <main className={`config ${modoEscuro ? 'config-escuro' : ''}`}>

@@ -461,3 +461,44 @@
   min-height: 0;
   overflow-y: auto;
 }
+
+
+/* =====================================
+   MODO ESCURO DO MAPA
+   ===================================== */
+
+:root.tema-escuro .truck-route-panel {
+  background: #1b2520;
+  color: #eff4ee;
+}
+
+:root.tema-escuro .truck-route-panel .route-subtitle {
+  color: #b0beb4;
+}
+
+:root.tema-escuro .truck-route-panel .route-point-off {
+  color: #a4b1a8;
+}
+
+:root.tema-escuro .truck-route-panel .route-point-active {
+  color: #d8efb0;
+}
+
+:root.tema-escuro .truck-route-panel .route-point-home {
+  color: #d8efb0;
+}
+
+:root.tema-escuro .leaflet-tooltip.truck-street-label {
+  background: #1b2520;
+  color: #d8efb0;
+  border-color: #d8efb0;
+}
+
+:root.tema-escuro .leaflet-tooltip-top.truck-street-label::before {
+  border-top-color: #d8efb0;
+}
+
+/* Textos do painel inferior sempre brancos */
+.painel-rotulo {
+  color: #ffffff;
+}

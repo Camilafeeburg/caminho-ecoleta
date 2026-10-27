@@ -169,32 +169,9 @@
   transform: translateY(-1px);
 }
 
-.auth-botao:focus-visible,
-.auth-link-secundario:focus-visible,
-.auth-rodape button:focus-visible {
-  outline: 2px solid var(--lima);
-  outline-offset: 3px;
-}
 
-.auth-botao:disabled {
-  cursor: wait;
-  opacity: .7;
-}
 
-.auth-link-secundario {
-  display: block;
-  margin: 18px auto 0;
-  padding: 4px;
-  border: 0;
-  background: none;
-  color: rgba(255, 255, 255, .72);
-  cursor: pointer;
-}
 
-.auth-link-secundario:hover {
-  color: var(--branco);
-  text-decoration: underline;
-}
 
 .auth-rodape {
   display: flex;

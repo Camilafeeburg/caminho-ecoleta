@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap');
 
 .config {
@@ -11,11 +10,12 @@
   --config-icon-bg: #e7f0e8;
 
   box-sizing: border-box;
+  min-height: 100%;
   overflow-y: auto;
-  padding: clamp(42px, 7vw, 104px) clamp(24px, 5vw, 86px);
+  padding: 42px clamp(24px, 5vw, 86px) 60px;
   background: var(--config-bg);
   color: var(--config-ink);
-  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
   transition: background 0.25s ease, color 0.25s ease;
 }
 
@@ -25,7 +25,6 @@
   box-sizing: border-box;
 }
 
-/* Cabeçalho: título à esquerda e navegação ao lado */
 
 .config-cabecalho {
   display: flex;
@@ -37,7 +36,6 @@
 
 .config-introducao {
   min-width: 0;
-  margin-bottom: 0;
 }
 
 .config-introducao h1 {
@@ -53,15 +51,14 @@
   font-size: clamp(17px, 1.6vw, 22px);
 }
 
-/* Navegação Perfil | Configurações */
 
 .config-navegacao {
   display: flex;
-  flex: none;
+  align-items: center;
+  flex-shrink: 0;
   width: max-content;
-  max-width: 100%;
-  margin: 0;
   padding: 5px;
+  margin: 0;
   border: 1px solid var(--config-line);
   border-radius: 999px;
   background: var(--config-card);
@@ -69,6 +66,9 @@
 
 .config-navegacao button,
 .config-navegacao span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 14px clamp(19px, 2.2vw, 31px);
   border: 0;
   border-radius: 999px;
@@ -77,6 +77,7 @@
   font: inherit;
   font-size: clamp(15px, 1.45vw, 20px);
   font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -95,13 +96,13 @@
   color: #ffffff;
 }
 
-/* Cartões de configurações */
-
 .config-conteudo {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+  width: 100%;
   max-width: 1100px;
+  margin: 0 auto;
 }
 
 .config-secao {
@@ -117,7 +118,6 @@
   grid-column: 1 / -1;
 }
 
-/* Títulos dos cartões */
 
 .config-secao-titulo {
   display: flex;
@@ -149,7 +149,6 @@
   font-size: 15px;
 }
 
-/* Opções */
 
 .config-opcao {
   display: flex;
@@ -176,8 +175,6 @@
   font-weight: 400;
   line-height: 1.5;
 }
-
-/* Alternadores */
 
 .config-alternador {
   position: relative;
@@ -211,7 +208,6 @@
   transform: translateX(22px);
 }
 
-/* Link para o perfil */
 
 .config-link {
   display: flex;
@@ -239,7 +235,6 @@
   line-height: 1;
 }
 
-/* Botão voltar */
 
 .config-voltar {
   margin-top: 34px;
@@ -259,14 +254,12 @@
   color: #ffffff;
 }
 
-/* Acessibilidade */
 
 .config button:focus-visible {
   outline: 3px solid #d8ef71;
   outline-offset: 3px;
 }
 
-/* Modo escuro */
 
 .config-escuro {
   --config-bg: #101b17;
@@ -301,7 +294,6 @@
   color: #102b22;
 }
 
-/* Telas menores */
 
 @media (max-width: 760px) {
   .config {
@@ -309,9 +301,13 @@
   }
 
   .config-cabecalho {
-    flex-direction: column-reverse;
+    flex-direction: column;
     align-items: flex-start;
     gap: 28px;
+  }
+
+  .config-navegacao {
+    max-width: 100%;
   }
 
   .config-navegacao button,
@@ -322,6 +318,7 @@
 
   .config-conteudo {
     grid-template-columns: 1fr;
+    margin: 0;
   }
 
   .config-secao-conta {
