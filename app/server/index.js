@@ -315,6 +315,11 @@ async function fetchUserApi(apiUrl, userId) {
     console.error(`${path.basename(url.pathname)} recusou o token: confira INTERNAL_API_TOKEN no .env e api/config.php.`)
     throw createHttpError('O servidor não está autorizado a consultar a API de usuários.', 502)
   }
+  if (!data && userResponse.status === 404) {
+    // 404 sem JSON é a página do próprio Apache: o arquivo PHP não existe nesse endereço.
+    console.error(`${url.origin}${url.pathname} não encontrado (404) no Apache: confira APACHE_HOST, APACHE_PORT e API_PATH em ${ENV_FILE} e se o projeto está na pasta pública do Apache.`)
+    throw createHttpError('A API de usuários não foi encontrada no servidor. Confira a configuração do Apache (API_PATH no .env).', 502)
+  }
   if (!userResponse.ok || !data) {
     // Erros do cadastro (ex.: usuário sem CEP) chegam com a mensagem do PHP para a pessoa ver.
     const status = userResponse.status >= 400 && userResponse.status < 500 ? userResponse.status : 502
