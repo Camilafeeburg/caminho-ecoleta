@@ -45,7 +45,7 @@ export default function Sidebar({ onSair, onMudarPagina }) {
       <nav id="menu-principal" className={`sidebar ${isOpen ? 'open' : ''}`} inert={!isOpen}>
         <ul>
           <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavegacao('perfil'); }}>Meu perfil</a></li>
-          <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavegacao('mudarlocal'); }}>Mudar Local</a></li>
+       
           <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavegacao('colseletiva'); }}>Col. Seletiva</a></li>
           <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavegacao('configuracoes'); }}>Configurações</a></li>
           <li>

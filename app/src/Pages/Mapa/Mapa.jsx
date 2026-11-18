@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import Sidebar from '../../sidebar'
 import MeuPerfil from './MeuPerfil'
-import MudarLocal from './MudarLocal'
 import ColSeletiva from './ColSeletiva'
 import Configuracoes from './Configuracoes'
 import './Mapa.css'
@@ -372,7 +371,6 @@ function Mapa({ usuarioSessao, onSair, onSessaoExpirada }) {
         </header>
 
         {pagina === 'perfil' && <MeuPerfil usuario={usuarioSessao} endereco={endereco} onAbrirConfiguracoes={() => setPagina('configuracoes')} />}
-        {pagina === 'mudarlocal' && <MudarLocal onVoltar={() => setPagina('mapa')} />}
         {pagina === 'perfil' && <MeuPerfil usuario={usuarioSessao} endereco={endereco} onAbrirConfiguracoes={() => setPagina('configuracoes')} />}
         {pagina === 'colseletiva' && <ColSeletiva onVoltar={() => setPagina('mapa')} />}
        {pagina === 'configuracoes' && (<Configuracoes onVoltar={() => setPagina('mapa')} onAbrirPerfil={() => setPagina('perfil')}/>
